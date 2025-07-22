@@ -71,10 +71,9 @@ export class TursoRepository implements IssueRepository {
       if (count === 0) {
         console.log("[Turso] Seeding initial data...")
         for (const issue of SEED_ISSUES) {
-          await client.execute({
-            sql: "INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)",
-            args: [issue.title, issue.description ?? null, issue.status, issue.priority, issue.assignee ?? null],
-          })
+          const stmt = await client.prepare("INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)");
+          await stmt.run([issue.title, issue.description ?? null, issue.status, issue.priority, issue.assignee ?? null]
+          )
         }
         console.log(`[Turso] Seeded ${SEED_ISSUES.length} issues`)
       }
