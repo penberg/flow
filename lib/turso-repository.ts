@@ -3,6 +3,7 @@ import { connect } from "@tursodatabase/serverless"
 import type { Client } from "@tursodatabase/serverless"
 import type { Issue, CreateIssueData, UpdateIssueData } from "./types"
 import type { IssueRepository } from "./repository"
+import { SEED_ISSUES } from "./seed-data"
 
 export class TursoRepository implements IssueRepository {
   private client: Client | null = null
@@ -55,6 +56,18 @@ export class TursoRepository implements IssueRepository {
         ],
         "write",
       )
+
+      // Check if we need to seed data
+      const countResult = await client.execute("SELECT COUNT(*) as count FROM issues")
+      const count = (countResult.rows[0] as any).count
+
+      if (count === 0) {
+        console.log("[Turso] Seeding initial data...")
+        for (const issue of SEED_ISSUES) {
+          await this.create(issue)
+        }
+        console.log(`[Turso] Seeded ${SEED_ISSUES.length} issues`)
+      }
 
       this.schemaReady = true
       console.log("[Turso] Database schema ready")

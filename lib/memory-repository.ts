@@ -1,19 +1,30 @@
 import type { Issue, CreateIssueData, UpdateIssueData } from "./types"
 import type { IssueRepository } from "./repository"
+import { SEED_ISSUES } from "./seed-data"
 
 export class MemoryRepository implements IssueRepository {
   private get store() {
-    const globalStore = (globalThis as any).__FAKE_DB__ ?? { issues: [], nextId: 1 }
+    const globalStore = (globalThis as any).__FAKE_DB__ ?? { issues: [], nextId: 1, seeded: false }
     ;(globalThis as any).__FAKE_DB__ = globalStore
     return globalStore
   }
 
   async ensureSchema(): Promise<void> {
-    // No-op for in-memory
     console.log("[Memory] Schema ready (in-memory)")
+
+    // Seed data if not already done
+    if (!this.store.seeded) {
+      console.log("[Memory] Seeding initial data...")
+      for (const issueData of SEED_ISSUES) {
+        await this.create(issueData)
+      }
+      this.store.seeded = true
+      console.log(`[Memory] Seeded ${SEED_ISSUES.length} issues`)
+    }
   }
 
   async getAll(): Promise<Issue[]> {
+    await this.ensureSchema()
     return [...this.store.issues].reverse()
   }
 
