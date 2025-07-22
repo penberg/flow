@@ -93,8 +93,7 @@ export class TursoRepository implements IssueRepository {
 
       console.log("[Turso] Creating issue with data:", JSON.stringify(data, null, 2))
 
-      await client.execute(`INSERT INTO issues (title, description, status, priority, assignee) VALUES (${data.title}, ${data.description ?? null}, ${data.status}, ${data.priority}, ${data.assignee ?? null})`);
-      console.log("[Turso] Issue created successfully")
+    const sql = `INSERT INTO issues (title, description, status, priority, assignee) VALUES ('${data.title}', '${data.description ?? null}', '${data.status}', '${data.priority}', '${data.assignee ?? null}')`;      console.log("[Turso] Issue created successfully")
     } catch (error) {
       console.error("[Turso] create failed:", error)
       throw new Error(`Failed to create issue: ${error instanceof Error ? error.message : "Unknown error"}`)
