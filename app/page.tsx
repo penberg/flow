@@ -2,12 +2,9 @@ import { getIssues } from "@/lib/actions"
 import { IssueCard } from "@/components/issue-card"
 import { CreateIssueDialog } from "@/components/create-issue-dialog"
 import { Badge } from "@/components/ui/badge"
-import { use } from "react"
 
-const issuesPromise = getIssues()
-
-export default function HomePage() {
-  const issues = use(issuesPromise)
+export default async function HomePage() {
+  const issues = await getIssues()
 
   const todoIssues = issues.filter((issue) => issue.status === "todo")
   const inProgressIssues = issues.filter((issue) => issue.status === "in_progress")
