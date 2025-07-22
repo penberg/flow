@@ -8,18 +8,7 @@ import { use } from "react"
 const issuesPromise = getIssues()
 
 export default function HomePage() {
-  let issues: Awaited<ReturnType<typeof getIssues>> = []
-
-  try {
-    issues = use(issuesPromise)
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Unknown error"
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <pre className="text-red-600">{msg}</pre>
-      </div>
-    )
-  }
+  const issues = use(issuesPromise) // ← no try/catch
 
   const todoIssues = issues.filter((issue) => issue.status === "todo")
   const inProgressIssues = issues.filter((issue) => issue.status === "in_progress")
