@@ -4,14 +4,10 @@ import { CreateIssueDialog } from "@/components/create-issue-dialog"
 import { Badge } from "@/components/ui/badge"
 import { use } from "react"
 
-// Create (and cache) the promise outside the component
 const issuesPromise = getIssues()
 
 export default function HomePage() {
   const issues = use(issuesPromise)
-
-  // Debug: Log issues structure on client side
-  console.log("[Client] Issues received:", issues.length, issues.slice(0, 1))
 
   const todoIssues = issues.filter((issue) => issue.status === "todo")
   const inProgressIssues = issues.filter((issue) => issue.status === "in_progress")
@@ -27,11 +23,6 @@ export default function HomePage() {
               <Badge variant="secondary" className="text-xs">
                 {issues.length} issues
               </Badge>
-              {process.env.VERCEL_ENV && (
-                <Badge variant="outline" className="text-xs">
-                  {process.env.VERCEL_ENV}
-                </Badge>
-              )}
             </div>
             <CreateIssueDialog />
           </div>
@@ -42,8 +33,7 @@ export default function HomePage() {
         {issues.length === 0 ? (
           <div className="text-center py-12">
             <h3 className="text-lg font-medium text-gray-900 mb-2">No issues found</h3>
-            <p className="text-gray-500 mb-4">This could mean the database is empty or there's a connection issue.</p>
-            <p className="text-sm text-gray-400">Check the browser console for connection details.</p>
+            <p className="text-gray-500 mb-4">Get started by creating your first issue.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -100,14 +90,6 @@ export default function HomePage() {
                 )}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Debug info */}
-        {process.env.NODE_ENV === "development" && (
-          <div className="mt-8 p-4 bg-gray-100 rounded text-xs">
-            <h3 className="font-bold mb-2">Debug Info:</h3>
-            <pre>{JSON.stringify(issues.slice(0, 2), null, 2)}</pre>
           </div>
         )}
       </div>

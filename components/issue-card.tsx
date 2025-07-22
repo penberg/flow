@@ -40,9 +40,6 @@ const priorityLabels = {
 }
 
 export function IssueCard({ issue }: IssueCardProps) {
-  // Debug: Log the issue data
-  console.log("[IssueCard] Rendering issue:", JSON.stringify(issue, null, 2))
-
   const handleStatusChange = async (newStatus: Issue["status"]) => {
     await updateIssue(issue.id, { status: newStatus })
   }
@@ -75,11 +72,7 @@ export function IssueCard({ issue }: IssueCardProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <h3 className="font-semibold text-sm leading-tight">{issue.title || "[NO TITLE]"}</h3>
-        {/* Debug info */}
-        <div className="text-xs text-red-500">
-          DEBUG: title="{issue.title}" type={typeof issue.title}
-        </div>
+        <h3 className="font-semibold text-sm leading-tight">{issue.title}</h3>
       </CardHeader>
       <CardContent className="pt-0">
         {issue.description && <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{issue.description}</p>}
