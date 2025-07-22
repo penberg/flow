@@ -64,20 +64,6 @@ export class TursoRepository implements IssueRepository {
         END;
       `)
 
-      // Check if we need to seed data
-      const countResult = await client.execute("SELECT COUNT(*) as count FROM issues")
-      const count = (countResult.rows[0] as any).count
-
-      if (count === 0) {
-        console.log("[Turso] Seeding initial data...")
-        for (const issue of SEED_ISSUES) {
-          const stmt = await client.prepare("INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)");
-          await stmt.run([issue.title, issue.description ?? null, issue.status, issue.priority, issue.assignee ?? null]
-          )
-        }
-        console.log(`[Turso] Seeded ${SEED_ISSUES.length} issues`)
-      }
-
       this.schemaReady = true
       console.log("[Turso] Database schema ready")
     } catch (error) {
@@ -107,11 +93,7 @@ export class TursoRepository implements IssueRepository {
 
       console.log("[Turso] Creating issue with data:", JSON.stringify(data, null, 2))
 
-      await client.execute({
-        sql: "INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)",
-        args: [data.title, data.description ?? null, data.status, data.priority, data.assignee ?? null],
-      })
-
+      await client.execute(`INSERT INTO issues (title, description, status, priority, assignee) VALUES ({data.title}, {data.description ?? null}, {data.status}, {data.priority}, {data.assignee ?? null})`);
       console.log("[Turso] Issue created successfully")
     } catch (error) {
       console.error("[Turso] create failed:", error)
