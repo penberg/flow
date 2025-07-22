@@ -1,70 +1,61 @@
-"use server" // ← NEW: mark entire module as server-only
-import { getTursoClient } from "./db"
-import { ensureSchema } from "./schema"
+"use server"
+
+import { getRepository } from "./repository-factory"
 import type { Issue, CreateIssueData, UpdateIssueData } from "./types"
 import { revalidatePath } from "next/cache"
 
-async function withClient<T>(fn: (c: ReturnType<typeof getTursoClient>) => Promise<T>) {
-  const client = await getTursoClient()
-  await ensureSchema(client)
-  return fn(client)
-}
-
 export async function getIssues(): Promise<Issue[]> {
-  return withClient(async (client) => {
-    const res = await client.execute("SELECT * FROM issues ORDER BY created_at DESC")
-    return res.rows as Issue[]
-  })
+  console.log("[Server Action] getIssues called")
+
+  try {
+    const repo = getRepository()
+    const issues = await repo.getAll()
+    console.log(`[Server] Found ${issues.length} issues`)
+    return issues
+  } catch (error) {
+    console.error("[Server] getIssues failed:", error)
+    throw new Error(`Database query failed: ${error instanceof Error ? error.message : "Unknown error"}`)
+  }
 }
 
 export async function createIssue(data: CreateIssueData) {
-  return withClient(async (client) => {
-    const stmt = client.prepare(
-      "INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)",
-    )
-    await stmt.execute([data.title, data.description ?? null, data.status, data.priority, data.assignee ?? null])
+  console.log("[Server Action] createIssue called")
+
+  try {
+    const repo = getRepository()
+    await repo.create(data)
     revalidatePath("/")
-  })
+    console.log("[Server] Issue created successfully")
+  } catch (error) {
+    console.error("[Server] createIssue failed:", error)
+    throw error
+  }
 }
 
 export async function updateIssue(id: number, data: UpdateIssueData) {
-  return withClient(async (client) => {
-    const sets: string[] = []
-    const args: unknown[] = []
+  console.log("[Server Action] updateIssue called")
 
-    if (data.title !== undefined) {
-      sets.push("title = ?")
-      args.push(data.title)
-    }
-    if (data.description !== undefined) {
-      sets.push("description = ?")
-      args.push(data.description)
-    }
-    if (data.status !== undefined) {
-      sets.push("status = ?")
-      args.push(data.status)
-    }
-    if (data.priority !== undefined) {
-      sets.push("priority = ?")
-      args.push(data.priority)
-    }
-    if (data.assignee !== undefined) {
-      sets.push("assignee = ?")
-      args.push(data.assignee)
-    }
-
-    if (!sets.length) return // nothing to update
-
-    args.push(id)
-    const stmt = client.prepare(`UPDATE issues SET ${sets.join(", ")} WHERE id = ?`)
-    await stmt.execute(args)
+  try {
+    const repo = getRepository()
+    await repo.update(id, data)
     revalidatePath("/")
-  })
+    console.log("[Server] Issue updated successfully")
+  } catch (error) {
+    console.error("[Server] updateIssue failed:", error)
+    throw error
+  }
 }
 
 export async function deleteIssue(id: number) {
-  return withClient(async (client) => {
-    await client.prepare("DELETE FROM issues WHERE id = ?").execute([id])
+  console.log("[Server Action] deleteIssue called")
+
+  try {
+    const repo = getRepository()
+    await repo.delete(id)
     revalidatePath("/")
-  })
+    console.log("[Server] Issue deleted successfully")
+  } catch (error) {
+    console.error("[Server] deleteIssue failed:", error)
+    throw error
+  }
 }

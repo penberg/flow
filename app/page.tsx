@@ -2,9 +2,24 @@ import { getIssues } from "@/lib/actions"
 import { IssueCard } from "@/components/issue-card"
 import { CreateIssueDialog } from "@/components/create-issue-dialog"
 import { Badge } from "@/components/ui/badge"
+import { use } from "react"
 
-export default async function HomePage() {
-  const issues = await getIssues()
+// Create (and cache) the promise outside the component
+const issuesPromise = getIssues()
+
+export default function HomePage() {
+  let issues: Awaited<ReturnType<typeof getIssues>> = []
+
+  try {
+    issues = use(issuesPromise)
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown error"
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <pre className="text-red-600">{msg}</pre>
+      </div>
+    )
+  }
 
   const todoIssues = issues.filter((issue) => issue.status === "todo")
   const inProgressIssues = issues.filter((issue) => issue.status === "in_progress")
@@ -20,6 +35,11 @@ export default async function HomePage() {
               <Badge variant="secondary" className="text-xs">
                 {issues.length} issues
               </Badge>
+              {process.env.VERCEL_ENV && (
+                <Badge variant="outline" className="text-xs">
+                  {process.env.VERCEL_ENV}
+                </Badge>
+              )}
             </div>
             <CreateIssueDialog />
           </div>
