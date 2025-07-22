@@ -3,7 +3,6 @@ import { connect } from "@tursodatabase/serverless"
 import type { Client } from "@tursodatabase/serverless"
 import type { Issue, CreateIssueData, UpdateIssueData } from "./types"
 import type { IssueRepository } from "./repository"
-import { SEED_ISSUES } from "./seed-data"
 
 export class TursoRepository implements IssueRepository {
   private client: Client | null = null
@@ -37,7 +36,6 @@ export class TursoRepository implements IssueRepository {
     const client = await this.getClient()
 
     try {
-      /* One statement at a time keeps us compatible with every driver */
       await client.execute(`
         CREATE TABLE IF NOT EXISTS issues (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,7 +77,31 @@ export class TursoRepository implements IssueRepository {
 
       const result = await client.execute("SELECT * FROM issues ORDER BY created_at DESC")
       console.log(`[Turso] Retrieved ${result.rows.length} issues`)
-      return result.rows as Issue[]
+
+      // Debug: Log the raw data structure
+      if (result.rows.length > 0) {
+        console.log("[Turso] RAW FIRST ROW:", JSON.stringify(result.rows[0], null, 2))
+        console.log("[Turso] RAW FIRST ROW KEYS:", Object.keys(result.rows[0]))
+      }
+
+      // Convert rows to proper Issue objects with explicit type conversion
+      const issues: Issue[] = result.rows.map((row: any) => {
+        const issue = {
+          id: Number(row.id),
+          title: String(row.title || ""),
+          description: row.description ? String(row.description) : null,
+          status: String(row.status || "todo") as Issue["status"],
+          priority: String(row.priority || "medium") as Issue["priority"],
+          assignee: row.assignee ? String(row.assignee) : null,
+          created_at: String(row.created_at || ""),
+          updated_at: String(row.updated_at || ""),
+        }
+
+        console.log("[Turso] CONVERTED ISSUE:", JSON.stringify(issue, null, 2))
+        return issue
+      })
+
+      return issues
     } catch (error) {
       console.error("[Turso] getAll failed:", error)
       throw new Error(`Failed to fetch issues: ${error instanceof Error ? error.message : "Unknown error"}`)
@@ -93,7 +115,12 @@ export class TursoRepository implements IssueRepository {
 
       console.log("[Turso] Creating issue with data:", JSON.stringify(data, null, 2))
 
-    const sql = `INSERT INTO issues (title, description, status, priority, assignee) VALUES ('${data.title}', '${data.description ?? null}', '${data.status}', '${data.priority}', '${data.assignee ?? null}')`;      console.log("[Turso] Issue created successfully")
+      await client.execute({
+        sql: "INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)",
+        args: [data.title, data.description ?? null, data.status, data.priority, data.assignee ?? null],
+      })
+
+      console.log("[Turso] Issue created successfully")
     } catch (error) {
       console.error("[Turso] create failed:", error)
       throw new Error(`Failed to create issue: ${error instanceof Error ? error.message : "Unknown error"}`)

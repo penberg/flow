@@ -8,7 +8,10 @@ import { use } from "react"
 const issuesPromise = getIssues()
 
 export default function HomePage() {
-  const issues = use(issuesPromise) // ← no try/catch
+  const issues = use(issuesPromise)
+
+  // Debug: Log issues structure on client side
+  console.log("[Client] Issues received:", issues.length, issues.slice(0, 1))
 
   const todoIssues = issues.filter((issue) => issue.status === "todo")
   const inProgressIssues = issues.filter((issue) => issue.status === "in_progress")
@@ -97,6 +100,14 @@ export default function HomePage() {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Debug info */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="mt-8 p-4 bg-gray-100 rounded text-xs">
+            <h3 className="font-bold mb-2">Debug Info:</h3>
+            <pre>{JSON.stringify(issues.slice(0, 2), null, 2)}</pre>
           </div>
         )}
       </div>
