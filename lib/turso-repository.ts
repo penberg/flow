@@ -37,9 +37,8 @@ export class TursoRepository implements IssueRepository {
     const client = await this.getClient()
 
     try {
-      await client.batch(
-        [
-          `CREATE TABLE IF NOT EXISTS issues (
+      await client.batch([
+        `CREATE TABLE IF NOT EXISTS issues (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           title TEXT NOT NULL,
           description TEXT,
@@ -51,7 +50,7 @@ export class TursoRepository implements IssueRepository {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`,
-          `CREATE TRIGGER IF NOT EXISTS update_issues_updated_at
+        `CREATE TRIGGER IF NOT EXISTS update_issues_updated_at
           AFTER UPDATE ON issues
           FOR EACH ROW
         BEGIN
@@ -59,9 +58,7 @@ export class TursoRepository implements IssueRepository {
             SET updated_at = CURRENT_TIMESTAMP
             WHERE id = NEW.id;
         END;`,
-        ],
-        "write",
-      )
+      ])
 
       // Check if we need to seed data
       const countResult = await client.execute("SELECT COUNT(*) as count FROM issues")
@@ -70,16 +67,10 @@ export class TursoRepository implements IssueRepository {
       if (count === 0) {
         console.log("[Turso] Seeding initial data...")
         for (const issue of SEED_ISSUES) {
-          const stmt = client.prepare(
-            "INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)",
-          )
-          await stmt.execute([
-            issue.title,
-            issue.description ?? null,
-            issue.status,
-            issue.priority,
-            issue.assignee ?? null,
-          ])
+          await client.execute({
+            sql: "INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)",
+            args: [issue.title, issue.description ?? null, issue.status, issue.priority, issue.assignee ?? null],
+          })
         }
         console.log(`[Turso] Seeded ${SEED_ISSUES.length} issues`)
       }
@@ -113,19 +104,12 @@ export class TursoRepository implements IssueRepository {
 
       console.log("[Turso] Creating issue with data:", JSON.stringify(data, null, 2))
 
-      const stmt = client.prepare(
-        "INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)",
-      )
+      await client.execute({
+        sql: "INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)",
+        args: [data.title, data.description ?? null, data.status, data.priority, data.assignee ?? null],
+      })
 
-      const result = await stmt.execute([
-        data.title,
-        data.description ?? null,
-        data.status,
-        data.priority,
-        data.assignee ?? null,
-      ])
-
-      console.log("[Turso] Issue created with result:", result)
+      console.log("[Turso] Issue created successfully")
     } catch (error) {
       console.error("[Turso] create failed:", error)
       throw new Error(`Failed to create issue: ${error instanceof Error ? error.message : "Unknown error"}`)
@@ -164,8 +148,10 @@ export class TursoRepository implements IssueRepository {
       if (!sets.length) return
 
       args.push(id)
-      const stmt = client.prepare(`UPDATE issues SET ${sets.join(", ")} WHERE id = ?`)
-      await stmt.execute(args)
+      await client.execute({
+        sql: `UPDATE issues SET ${sets.join(", ")} WHERE id = ?`,
+        args,
+      })
 
       console.log("[Turso] Issue updated successfully")
     } catch (error) {
@@ -179,8 +165,10 @@ export class TursoRepository implements IssueRepository {
       const client = await this.getClient()
       await this.ensureSchema()
 
-      const stmt = client.prepare("DELETE FROM issues WHERE id = ?")
-      await stmt.execute([id])
+      await client.execute({
+        sql: "DELETE FROM issues WHERE id = ?",
+        args: [id],
+      })
 
       console.log("[Turso] Issue deleted successfully")
     } catch (error) {
