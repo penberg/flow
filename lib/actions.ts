@@ -19,43 +19,80 @@ export async function getIssues(): Promise<Issue[]> {
 }
 
 export async function createIssue(data: CreateIssueData) {
-  console.log("[Server Action] createIssue called")
+  console.log("[Server Action] createIssue called with:", JSON.stringify(data, null, 2))
 
   try {
+    // Validate required fields
+    if (!data.title || data.title.trim() === "") {
+      throw new Error("Title is required")
+    }
+
+    if (!data.status || !["todo", "in_progress", "done"].includes(data.status)) {
+      throw new Error("Invalid status")
+    }
+
+    if (!data.priority || !["low", "medium", "high", "urgent"].includes(data.priority)) {
+      throw new Error("Invalid priority")
+    }
+
     const repo = getRepository()
     await repo.create(data)
-    revalidatePath("/")
+
     console.log("[Server] Issue created successfully")
+    revalidatePath("/")
+
+    return { success: true }
   } catch (error) {
     console.error("[Server] createIssue failed:", error)
-    throw error
+
+    // Return a more specific error message
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+    throw new Error(`Failed to create issue: ${errorMessage}`)
   }
 }
 
 export async function updateIssue(id: number, data: UpdateIssueData) {
-  console.log("[Server Action] updateIssue called")
+  console.log("[Server Action] updateIssue called with id:", id, "data:", JSON.stringify(data, null, 2))
 
   try {
+    if (!id || id <= 0) {
+      throw new Error("Invalid issue ID")
+    }
+
     const repo = getRepository()
     await repo.update(id, data)
-    revalidatePath("/")
+
     console.log("[Server] Issue updated successfully")
+    revalidatePath("/")
+
+    return { success: true }
   } catch (error) {
     console.error("[Server] updateIssue failed:", error)
-    throw error
+
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+    throw new Error(`Failed to update issue: ${errorMessage}`)
   }
 }
 
 export async function deleteIssue(id: number) {
-  console.log("[Server Action] deleteIssue called")
+  console.log("[Server Action] deleteIssue called with id:", id)
 
   try {
+    if (!id || id <= 0) {
+      throw new Error("Invalid issue ID")
+    }
+
     const repo = getRepository()
     await repo.delete(id)
-    revalidatePath("/")
+
     console.log("[Server] Issue deleted successfully")
+    revalidatePath("/")
+
+    return { success: true }
   } catch (error) {
     console.error("[Server] deleteIssue failed:", error)
-    throw error
+
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+    throw new Error(`Failed to delete issue: ${errorMessage}`)
   }
 }

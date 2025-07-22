@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 export function CreateIssueDialog() {
   const [open, setOpen] = useState(false)
@@ -19,25 +20,54 @@ export function CreateIssueDialog() {
   const [status, setStatus] = useState<"todo" | "in_progress" | "done">("todo")
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">("medium")
   const [assignee, setAssignee] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    await createIssue({
-      title,
-      description: description || null,
-      status,
-      priority,
-      assignee: assignee || null,
-    })
+    if (!title.trim()) {
+      toast({
+        title: "Error",
+        description: "Title is required",
+        variant: "destructive",
+      })
+      return
+    }
 
-    // Reset form
-    setTitle("")
-    setDescription("")
-    setStatus("todo")
-    setPriority("medium")
-    setAssignee("")
-    setOpen(false)
+    setIsSubmitting(true)
+
+    try {
+      await createIssue({
+        title: title.trim(),
+        description: description.trim() || null,
+        status,
+        priority,
+        assignee: assignee.trim() || null,
+      })
+
+      // Reset form
+      setTitle("")
+      setDescription("")
+      setStatus("todo")
+      setPriority("medium")
+      setAssignee("")
+      setOpen(false)
+
+      toast({
+        title: "Success",
+        description: "Issue created successfully",
+      })
+    } catch (error) {
+      console.error("Failed to create issue:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create issue",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -54,13 +84,14 @@ export function CreateIssueDialog() {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">Title *</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter issue title..."
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -72,13 +103,14 @@ export function CreateIssueDialog() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the issue..."
               rows={3}
+              disabled={isSubmitting}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={(value: any) => setStatus(value)}>
+              <Select value={status} onValueChange={(value: any) => setStatus(value)} disabled={isSubmitting}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -92,7 +124,7 @@ export function CreateIssueDialog() {
 
             <div className="space-y-2">
               <Label htmlFor="priority">Priority</Label>
-              <Select value={priority} onValueChange={(value: any) => setPriority(value)}>
+              <Select value={priority} onValueChange={(value: any) => setPriority(value)} disabled={isSubmitting}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -113,14 +145,17 @@ export function CreateIssueDialog() {
               value={assignee}
               onChange={(e) => setAssignee(e.target.value)}
               placeholder="Assign to someone..."
+              disabled={isSubmitting}
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit">Create Issue</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create Issue"}
+            </Button>
           </div>
         </form>
       </DialogContent>

@@ -14,14 +14,20 @@ export class TursoRepository implements IssueRepository {
 
     const { TURSO_DATABASE_URL, TURSO_AUTH_TOKEN } = process.env
     if (!TURSO_DATABASE_URL || !TURSO_AUTH_TOKEN) {
-      throw new Error("Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN in env")
+      throw new Error("Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN environment variables")
     }
 
-    this.client = connect({
-      url: TURSO_DATABASE_URL.replace(/^libsql:\/\//, "https://"),
-      authToken: TURSO_AUTH_TOKEN,
-    })
-    return this.client
+    try {
+      this.client = connect({
+        url: TURSO_DATABASE_URL.replace(/^libsql:\/\//, "https://"),
+        authToken: TURSO_AUTH_TOKEN,
+      })
+      console.log("[Turso] Connected to database")
+      return this.client
+    } catch (error) {
+      console.error("[Turso] Failed to connect:", error)
+      throw new Error(`Database connection failed: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
   }
 
   async ensureSchema(): Promise<void> {
@@ -64,7 +70,16 @@ export class TursoRepository implements IssueRepository {
       if (count === 0) {
         console.log("[Turso] Seeding initial data...")
         for (const issue of SEED_ISSUES) {
-          await this.create(issue)
+          const stmt = client.prepare(
+            "INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)",
+          )
+          await stmt.execute([
+            issue.title,
+            issue.description ?? null,
+            issue.status,
+            issue.priority,
+            issue.assignee ?? null,
+          ])
         }
         console.log(`[Turso] Seeded ${SEED_ISSUES.length} issues`)
       }
@@ -73,68 +88,104 @@ export class TursoRepository implements IssueRepository {
       console.log("[Turso] Database schema ready")
     } catch (error) {
       console.error("[Turso] Schema creation failed:", error)
-      throw error
+      throw new Error(`Schema setup failed: ${error instanceof Error ? error.message : "Unknown error"}`)
     }
   }
 
   async getAll(): Promise<Issue[]> {
-    const client = await this.getClient()
-    await this.ensureSchema()
+    try {
+      const client = await this.getClient()
+      await this.ensureSchema()
 
-    const result = await client.execute("SELECT * FROM issues ORDER BY created_at DESC")
-    return result.rows as Issue[]
+      const result = await client.execute("SELECT * FROM issues ORDER BY created_at DESC")
+      console.log(`[Turso] Retrieved ${result.rows.length} issues`)
+      return result.rows as Issue[]
+    } catch (error) {
+      console.error("[Turso] getAll failed:", error)
+      throw new Error(`Failed to fetch issues: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
   }
 
   async create(data: CreateIssueData): Promise<void> {
-    const client = await this.getClient()
-    await this.ensureSchema()
+    try {
+      const client = await this.getClient()
+      await this.ensureSchema()
 
-    const stmt = client.prepare(
-      "INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)",
-    )
-    await stmt.execute([data.title, data.description ?? null, data.status, data.priority, data.assignee ?? null])
+      console.log("[Turso] Creating issue with data:", JSON.stringify(data, null, 2))
+
+      const stmt = client.prepare(
+        "INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)",
+      )
+
+      const result = await stmt.execute([
+        data.title,
+        data.description ?? null,
+        data.status,
+        data.priority,
+        data.assignee ?? null,
+      ])
+
+      console.log("[Turso] Issue created with result:", result)
+    } catch (error) {
+      console.error("[Turso] create failed:", error)
+      throw new Error(`Failed to create issue: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
   }
 
   async update(id: number, data: UpdateIssueData): Promise<void> {
-    const client = await this.getClient()
-    await this.ensureSchema()
+    try {
+      const client = await this.getClient()
+      await this.ensureSchema()
 
-    const sets: string[] = []
-    const args: unknown[] = []
+      const sets: string[] = []
+      const args: unknown[] = []
 
-    if (data.title !== undefined) {
-      sets.push("title = ?")
-      args.push(data.title)
-    }
-    if (data.description !== undefined) {
-      sets.push("description = ?")
-      args.push(data.description)
-    }
-    if (data.status !== undefined) {
-      sets.push("status = ?")
-      args.push(data.status)
-    }
-    if (data.priority !== undefined) {
-      sets.push("priority = ?")
-      args.push(data.priority)
-    }
-    if (data.assignee !== undefined) {
-      sets.push("assignee = ?")
-      args.push(data.assignee)
-    }
+      if (data.title !== undefined) {
+        sets.push("title = ?")
+        args.push(data.title)
+      }
+      if (data.description !== undefined) {
+        sets.push("description = ?")
+        args.push(data.description)
+      }
+      if (data.status !== undefined) {
+        sets.push("status = ?")
+        args.push(data.status)
+      }
+      if (data.priority !== undefined) {
+        sets.push("priority = ?")
+        args.push(data.priority)
+      }
+      if (data.assignee !== undefined) {
+        sets.push("assignee = ?")
+        args.push(data.assignee)
+      }
 
-    if (!sets.length) return
+      if (!sets.length) return
 
-    args.push(id)
-    const stmt = client.prepare(`UPDATE issues SET ${sets.join(", ")} WHERE id = ?`)
-    await stmt.execute(args)
+      args.push(id)
+      const stmt = client.prepare(`UPDATE issues SET ${sets.join(", ")} WHERE id = ?`)
+      await stmt.execute(args)
+
+      console.log("[Turso] Issue updated successfully")
+    } catch (error) {
+      console.error("[Turso] update failed:", error)
+      throw new Error(`Failed to update issue: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
   }
 
   async delete(id: number): Promise<void> {
-    const client = await this.getClient()
-    await this.ensureSchema()
+    try {
+      const client = await this.getClient()
+      await this.ensureSchema()
 
-    const stmt = client.prepare("DELETE FROM issues WHERE id = ?")
-    await stmt.execute([id])
+      const stmt = client.prepare("DELETE FROM issues WHERE id = ?")
+      await stmt.execute([id])
+
+      console.log("[Turso] Issue deleted successfully")
+    } catch (error) {
+      console.error("[Turso] delete failed:", error)
+      throw new Error(`Failed to delete issue: ${error instanceof Error ? error.message : "Unknown error"}`)
+    }
   }
 }
