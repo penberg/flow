@@ -33,12 +33,13 @@ export class TursoRepository implements IssueRepository {
   async ensureSchema(): Promise<void> {
     if (this.schemaReady) return
 
-    console.log("[Turso] Ensuring database schema...")
+    console.log("[Turso] Ensuring database schema…")
     const client = await this.getClient()
 
     try {
-      await client.batch([
-        `CREATE TABLE IF NOT EXISTS issues (
+      /* One statement at a time keeps us compatible with every driver */
+      await client.execute(`
+        CREATE TABLE IF NOT EXISTS issues (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           title TEXT NOT NULL,
           description TEXT,
@@ -49,16 +50,19 @@ export class TursoRepository implements IssueRepository {
           assignee TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`,
-        `CREATE TRIGGER IF NOT EXISTS update_issues_updated_at
+        )
+      `)
+
+      await client.execute(`
+        CREATE TRIGGER IF NOT EXISTS update_issues_updated_at
           AFTER UPDATE ON issues
           FOR EACH ROW
         BEGIN
           UPDATE issues
             SET updated_at = CURRENT_TIMESTAMP
             WHERE id = NEW.id;
-        END;`,
-      ])
+        END;
+      `)
 
       // Check if we need to seed data
       const countResult = await client.execute("SELECT COUNT(*) as count FROM issues")
