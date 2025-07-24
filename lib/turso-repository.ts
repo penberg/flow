@@ -1,6 +1,5 @@
 import "server-only"
 import { connect } from "@tursodatabase/serverless"
-import type { Client } from "@tursodatabase/serverless"
 import type { Issue, CreateIssueData, UpdateIssueData } from "./types"
 import type { IssueRepository } from "./repository"
 
