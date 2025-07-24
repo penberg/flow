@@ -101,9 +101,11 @@ export class TursoRepository implements IssueRepository {
       const client = await this.getClient()
       await this.ensureSchema()
 
-      const sql = `INSERT INTO issues (title, description, status, priority, assignee) VALUES (${this.escapeString(data.title)}, ${this.escapeString(data.description)}, ${this.escapeString(data.status)}, ${this.escapeString(data.priority)}, ${this.escapeString(data.assignee)})`
+      const stmt = client.prepare(`
+        INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)
+      `)
 
-      await client.execute(sql)
+      await stmt.run([data.title, data.description, data.status, data.priority, data.assignee])
     } catch (error) {
       console.error("[Turso] create failed:", error)
       throw new Error(`Failed to create issue: ${error instanceof Error ? error.message : "Unknown error"}`)
@@ -148,8 +150,9 @@ export class TursoRepository implements IssueRepository {
       const client = await this.getClient()
       await this.ensureSchema()
 
-      const sql = `DELETE FROM issues WHERE id = ${id}`
-      await client.execute(sql)
+      const stmt = client.prepare(`DELETE FROM issues WHERE id = ?`)
+      await stmt.run([id])
+
     } catch (error) {
       console.error("[Turso] delete failed:", error)
       throw new Error(`Failed to delete issue: ${error instanceof Error ? error.message : "Unknown error"}`)
