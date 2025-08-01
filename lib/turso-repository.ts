@@ -38,7 +38,7 @@ export class TursoRepository implements IssueRepository {
     const client = await this.getClient()
 
     try {
-      await client.execute(`
+      await client.exec(`
         CREATE TABLE IF NOT EXISTS issues (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           title TEXT NOT NULL,
@@ -53,7 +53,7 @@ export class TursoRepository implements IssueRepository {
         )
       `)
 
-      await client.execute(`
+      await client.exec(`
         CREATE TRIGGER IF NOT EXISTS update_issues_updated_at
           AFTER UPDATE ON issues
           FOR EACH ROW
@@ -76,9 +76,9 @@ export class TursoRepository implements IssueRepository {
       const client = await this.getClient()
       await this.ensureSchema()
 
-      const result = await client.execute("SELECT * FROM issues ORDER BY created_at DESC")
-
-      const issues: Issue[] = result.rows.map((row: any) => ({
+      const stmt = await client.prepare("SELECT * FROM issues ORDER BY created_at DESC");
+      const result = await stmt.all();
+      const issues: Issue[] = result.map((row: any) => ({
         id: Number(row.id),
         title: String(row.title || ""),
         description: row.description ? String(row.description) : null,
@@ -138,7 +138,7 @@ export class TursoRepository implements IssueRepository {
       if (!sets.length) return
 
       const sql = `UPDATE issues SET ${sets.join(", ")} WHERE id = ${id}`
-      await client.execute(sql)
+      await client.exec(sql)
     } catch (error) {
       console.error("[Turso] update failed:", error)
       throw new Error(`Failed to update issue: ${error instanceof Error ? error.message : "Unknown error"}`)
