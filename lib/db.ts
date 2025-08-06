@@ -20,6 +20,9 @@ export const issuesCollection = createCollection(
       return response.json()
     },
     
+    // Poll every 5 seconds to detect concurrent changes
+    refetchInterval: 5000,
+    
     onInsert: async ({ transaction }) => {
       return Promise.all(
         transaction.mutations.map(async (mutation) => {
