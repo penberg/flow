@@ -1,6 +1,6 @@
 'use client'
 
-import { createIssue, updateIssue, deleteIssue } from '@/lib/db'
+import { issuesCollection } from '@/lib/db'
 import { useIssues } from '@/hooks/use-issues'
 import { IssueCard } from '@/components/issue-card'
 import { CreateIssueDialog } from '@/components/create-issue-dialog'
@@ -11,8 +11,8 @@ import { useCallback } from 'react'
 export function IssuesPage() {
   const { isLoading, error, allIssues, todoIssues, inProgressIssues, doneIssues, openIssuesCount } = useIssues()
 
-  const handleCreateIssue = useCallback(async (data: CreateIssueData) => {
-    await createIssue({
+  const handleCreateIssue = useCallback((data: CreateIssueData) => {
+    issuesCollection.insert({
       id: crypto.randomUUID(),
       issue_number: 0, // Will be set by server
       ...data,
@@ -21,12 +21,14 @@ export function IssuesPage() {
     })
   }, [])
 
-  const handleUpdateIssue = useCallback(async (id: string, updates: UpdateIssueData) => {
-    await updateIssue(id, updates)
+  const handleUpdateIssue = useCallback((id: string, updates: UpdateIssueData) => {
+    issuesCollection.update(id, (draft) => {
+      Object.assign(draft, updates)
+    })
   }, [])
 
-  const handleDeleteIssue = useCallback(async (id: string) => {
-    await deleteIssue(id)
+  const handleDeleteIssue = useCallback((id: string) => {
+    issuesCollection.delete(id)
   }, [])
 
   return (
