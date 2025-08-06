@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useState } from "react"
-import { createIssue } from "@/lib/actions"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -13,7 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-export function CreateIssueDialog() {
+interface CreateIssueDialogProps {
+  onCreateIssue: (data: any) => void
+}
+
+export function CreateIssueDialog({ onCreateIssue }: CreateIssueDialogProps) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -38,7 +41,7 @@ export function CreateIssueDialog() {
     setIsSubmitting(true)
 
     try {
-      await createIssue({
+      await onCreateIssue({
         title: title.trim(),
         description: description.trim() || null,
         status,

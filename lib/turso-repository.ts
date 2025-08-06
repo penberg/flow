@@ -40,7 +40,8 @@ export class TursoRepository implements IssueRepository {
     try {
       await client.exec(`
         CREATE TABLE IF NOT EXISTS issues (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id TEXT PRIMARY KEY,
+          issue_number INTEGER NOT NULL UNIQUE,
           title TEXT NOT NULL,
           description TEXT,
           status TEXT NOT NULL DEFAULT 'todo'
@@ -54,14 +55,7 @@ export class TursoRepository implements IssueRepository {
       `)
 
       await client.exec(`
-        CREATE TRIGGER IF NOT EXISTS update_issues_updated_at
-          AFTER UPDATE ON issues
-          FOR EACH ROW
-        BEGIN
-          UPDATE issues
-            SET updated_at = CURRENT_TIMESTAMP
-            WHERE id = NEW.id;
-        END;
+        CREATE INDEX IF NOT EXISTS idx_issues_issue_number ON issues(issue_number)
       `)
 
       this.schemaReady = true
@@ -79,14 +73,15 @@ export class TursoRepository implements IssueRepository {
       const stmt = await client.prepare("SELECT * FROM issues ORDER BY created_at DESC");
       const result = await stmt.all();
       const issues: Issue[] = result.map((row: any) => ({
-        id: Number(row.id),
-        title: String(row.title || ""),
-        description: row.description ? String(row.description) : null,
-        status: String(row.status || "todo") as Issue["status"],
-        priority: String(row.priority || "medium") as Issue["priority"],
-        assignee: row.assignee ? String(row.assignee) : null,
-        created_at: String(row.created_at || ""),
-        updated_at: String(row.updated_at || ""),
+        id: row.id,
+        issue_number: row.issue_number,
+        title: row.title || "",
+        description: row.description || null,
+        status: (row.status || "todo") as Issue["status"],
+        priority: (row.priority || "medium") as Issue["priority"],
+        assignee: row.assignee || null,
+        created_at: row.created_at || "",
+        updated_at: row.updated_at || "",
       }))
 
       return issues
@@ -96,23 +91,32 @@ export class TursoRepository implements IssueRepository {
     }
   }
 
-  async create(data: CreateIssueData): Promise<void> {
-    try {
-      const client = await this.getClient()
-      await this.ensureSchema()
+  async create(data: CreateIssueData, clientId?: string): Promise<void> {
+    const client = await this.getClient()
+    await this.ensureSchema()
 
-      const stmt = client.prepare(`
-        INSERT INTO issues (title, description, status, priority, assignee) VALUES (?, ?, ?, ?, ?)
+    try {
+      // Use provided ID or generate UUID for the issue
+      const id = clientId || crypto.randomUUID()
+
+      // Get next issue number directly from the issues table
+      const maxStmt = await client.prepare('SELECT COALESCE(MAX(issue_number), 0) + 1 as next_number FROM issues')
+      const maxResult = await maxStmt.all()
+      const issueNumber = maxResult[0].next_number
+
+      const stmt = await client.prepare(`
+        INSERT INTO issues (id, issue_number, title, description, status, priority, assignee, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `)
 
-      await stmt.run([data.title, data.description, data.status, data.priority, data.assignee])
+      await stmt.run([id, issueNumber, data.title, data.description, data.status, data.priority, data.assignee])
     } catch (error) {
       console.error("[Turso] create failed:", error)
       throw new Error(`Failed to create issue: ${error instanceof Error ? error.message : "Unknown error"}`)
     }
   }
 
-  async update(id: number, data: UpdateIssueData): Promise<void> {
+  async update(id: string, data: UpdateIssueData): Promise<void> {
     try {
       const client = await this.getClient()
       await this.ensureSchema()
@@ -137,7 +141,8 @@ export class TursoRepository implements IssueRepository {
 
       if (!sets.length) return
 
-      const sql = `UPDATE issues SET ${sets.join(", ")} WHERE id = ${id}`
+      sets.push(`updated_at = CURRENT_TIMESTAMP`)
+      const sql = `UPDATE issues SET ${sets.join(", ")} WHERE id = '${this.escapeString(id).slice(1, -1)}'`
       await client.exec(sql)
     } catch (error) {
       console.error("[Turso] update failed:", error)
@@ -145,12 +150,12 @@ export class TursoRepository implements IssueRepository {
     }
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: string): Promise<void> {
     try {
       const client = await this.getClient()
       await this.ensureSchema()
 
-      const stmt = client.prepare(`DELETE FROM issues WHERE id = ?`)
+      const stmt = await client.prepare(`DELETE FROM issues WHERE id = ?`)
       await stmt.run([id])
 
     } catch (error) {

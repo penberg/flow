@@ -1,5 +1,6 @@
 export interface Issue {
-  id: number
+  id: string
+  issue_number: number
   title: string
   description: string | null
   status: "todo" | "in_progress" | "done"
@@ -9,5 +10,5 @@ export interface Issue {
   updated_at: string
 }
 
-export type CreateIssueData = Omit<Issue, "id" | "created_at" | "updated_at">
+export type CreateIssueData = Omit<Issue, "id" | "issue_number" | "created_at" | "updated_at">
 export type UpdateIssueData = Partial<CreateIssueData>

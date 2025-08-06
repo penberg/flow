@@ -1,7 +1,6 @@
 "use client"
 
 import type { Issue } from "@/lib/types"
-import { updateIssue, deleteIssue } from "@/lib/actions"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,6 +10,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 interface IssueCardProps {
   issue: Issue
+  onUpdate: (id: string, updates: any) => void
+  onDelete: (id: string) => void
 }
 
 const statusColors = {
@@ -39,13 +40,13 @@ const priorityLabels = {
   urgent: "Urgent",
 }
 
-export function IssueCard({ issue }: IssueCardProps) {
-  const handleStatusChange = async (newStatus: Issue["status"]) => {
-    await updateIssue(issue.id, { status: newStatus })
+export function IssueCard({ issue, onUpdate, onDelete }: IssueCardProps) {
+  const handleStatusChange = (newStatus: Issue["status"]) => {
+    onUpdate(issue.id, { status: newStatus })
   }
 
-  const handleDelete = async () => {
-    await deleteIssue(issue.id)
+  const handleDelete = () => {
+    onDelete(issue.id)
   }
 
   return (
@@ -53,7 +54,7 @@ export function IssueCard({ issue }: IssueCardProps) {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">FL-{issue.id}</span>
+            <span className="text-sm text-muted-foreground">FL-{issue.issue_number}</span>
             <Badge variant="outline" className={priorityColors[issue.priority]}>
               {priorityLabels[issue.priority]}
             </Badge>

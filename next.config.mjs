@@ -9,6 +9,16 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-}
 
-export default nextConfig
+  webpack(config, { isServer }) {
+    // Add a rule to handle native .node files using node-loader
+    config.module.rules.push({
+      test: /\.node$/,
+      use: 'node-loader',
+    });
+
+    return config;
+  },
+};
+
+export default nextConfig;
