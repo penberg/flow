@@ -48,7 +48,7 @@ export function IssuesPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {allIssues.length === 0 ? (
+        {allIssues.length === 0 && !isLoading ? (
           <div className="text-center py-12">
             <h3 className="text-lg font-medium text-gray-900 mb-2">No issues found</h3>
             <p className="text-gray-500 mb-4">Get started by creating your first issue.</p>
@@ -67,7 +67,7 @@ export function IssuesPage() {
                 {todoIssues.map((issue) => (
                   <IssueCard key={issue.id} issue={issue} onUpdate={handleUpdateIssue} onDelete={handleDeleteIssue} />
                 ))}
-                {todoIssues.length === 0 && (
+                {todoIssues.length === 0 && !isLoading && (
                   <div className="text-center py-8 text-gray-500 text-sm">No todo issues</div>
                 )}
               </div>
@@ -85,7 +85,7 @@ export function IssuesPage() {
                 {inProgressIssues.map((issue) => (
                   <IssueCard key={issue.id} issue={issue} onUpdate={handleUpdateIssue} onDelete={handleDeleteIssue} />
                 ))}
-                {inProgressIssues.length === 0 && (
+                {inProgressIssues.length === 0 && !isLoading && (
                   <div className="text-center py-8 text-gray-500 text-sm">No issues in progress</div>
                 )}
               </div>
@@ -103,7 +103,7 @@ export function IssuesPage() {
                 {doneIssues.map((issue) => (
                   <IssueCard key={issue.id} issue={issue} onUpdate={handleUpdateIssue} onDelete={handleDeleteIssue} />
                 ))}
-                {doneIssues.length === 0 && (
+                {doneIssues.length === 0 && !isLoading && (
                   <div className="text-center py-8 text-gray-500 text-sm">No completed issues</div>
                 )}
               </div>
