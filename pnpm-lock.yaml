@@ -108,8 +108,8 @@ importers:
         specifier: ^5.84.1
         version: 5.84.1(react@19.0.0)
       '@tursodatabase/serverless':
-        specifier: ^0.1.2
-        version: 0.1.2
+        specifier: ^0.1.3
+        version: 0.1.3
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.5.0)
@@ -1100,8 +1100,8 @@ packages:
     peerDependencies:
       react: ^18 || ^19
 
-  '@tursodatabase/serverless@0.1.2':
-    resolution: {integrity: sha512-paD2xyujPal5p+cvYTLjBVlBvl0TLZN7qQA6P3OksXKHDfsr3GYxZrJoFeHp2hDXOAOTVFFBTNYcwNvg/PNHzg==}
+  '@tursodatabase/serverless@0.1.3':
+    resolution: {integrity: sha512-S30LgeIgUo2voGLI6F5sNjCZRBd/oUtneZi9zOry1jPZqeZVLJBHWXWyKkuW2/hLnbLT1AVIrenZ4yQav2+nZg==}
 
   '@types/d3-array@3.2.1':
     resolution: {integrity: sha512-Y2Jn2idRrLzUfAKV2LyRImR+y4oa2AntrgID95SHJxuMUrkNXmanDSed71sRNZysveJVt1hLLemQZIady0FpEg==}
@@ -3094,7 +3094,7 @@ snapshots:
       '@tanstack/query-core': 5.83.1
       react: 19.0.0
 
-  '@tursodatabase/serverless@0.1.2': {}
+  '@tursodatabase/serverless@0.1.3': {}
 
   '@types/d3-array@3.2.1': {}
 
