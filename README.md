@@ -1,30 +1,17 @@
-# Flow clone with serverless
+# Flow
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
-
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/penbergs-projects/flow)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/XuOUsbtVX8j)
+Flow is a simple issue tracker built with <a a href="https://v0.app">v0</a> and <a href="https://turso.tech">Turso</a>. The purpose of this project is to showcase Turso in the browser.
 
 ## Overview
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+The front-end uses <a href="https://tanstack.com/db/">TanStack DB</a> and the <a href="https://www.npmjs.com/package/@tursodatabase/sync">Turso Sync</a> package to provide a responsive UI. TanStack DB provides the in-memory database for live queries where UI is updated instantly as data changes. Turso Sync, in contrast, provides an embedded, SQLite-compatible database, that automatically sync to the Turso Cloud.
 
-## Deployment
+<p align="center">
+  <img src=".github/assets/flow-screenshot.png" alt="Flow Screenshot" width="400">
+</p>
 
-Your project is live at:
+## License
 
-**[https://vercel.com/penbergs-projects/flow](https://vercel.com/penbergs-projects/flow)**
+This project is licensed under the [MIT license].
 
-## Build your app
-
-Continue building your app on:
-
-**[https://v0.dev/chat/projects/XuOUsbtVX8j](https://v0.dev/chat/projects/XuOUsbtVX8j)**
-
-## How It Works
-
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+[MIT license]: LICENSE.md
